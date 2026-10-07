@@ -15,13 +15,20 @@ hostname = *.yaolaoss.cn
 var body = $response.body;
 var json = JSON.parse(body);
 
-// 直接修改 JSON 对象再序列化，替代动态正则替换
-// （原方案 hyIncome 含正则特殊字符时会导致匹配错误，且相同值的条目会相互干扰）
-for (var i = 0; i < json.length; i++) {
-  var item = json[i];
-  if (item.birthday && item.hyIncome != null) {
-    item.hyIncome = item.hyIncome + " | " + item.birthday;
-  }
+// 字符串级替换（与原版一致），仅修复一处隐患：
+// hyIncome 含 . + ( ) 等正则特殊字符时，动态构造的 RegExp 会解析错误
+function escapeRegExp(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-$done(JSON.stringify(json));
+for (var i = 0; i < json.length; i++) {
+  var item = json[i];
+  if (item.birthday == null || item.hyIncome == null) {
+    continue;
+  }
+  var birthStr = item.birthday;
+  var re = new RegExp('"hyIncome":"' + escapeRegExp(item.hyIncome) + '"', "g");
+  body = body.replace(re, '"hyIncome":"' + item.hyIncome + " | " + birthStr + '"');
+}
+
+$done(body);

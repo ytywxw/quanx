@@ -18,10 +18,11 @@ var json = JSON.parse(body);
 // 将用户等级强制设为 3（\d+ 兼容多位数字）
 body = body.replace(/userrank":"\d+/g, 'userrank":"3');
 
-// 仅当 memberday 是标准日期（YYYY-MM-DD）时才加 10 年，避免 "0"（非会员）被误改为 "10"
-if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(json.memberday || "")) {
-  var year = parseInt(json.memberday, 10) + 10;
-  body = body.replace(/memberday":"\d{4}/g, 'memberday":"' + year);
+// 会员到期日加 10 年：与原版一致，memberday 非空即处理
+// （仅补充了 undefined 保护：原代码 memberday 缺失时会崩溃）
+if (json.memberday) {
+  var year = parseInt(json.memberday.split("-")[0], 10) + 10;
+  body = body.replace(/memberday":"\d+/g, 'memberday":"' + year);
 }
 
 $done(body);
