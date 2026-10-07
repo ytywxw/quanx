@@ -23,7 +23,8 @@ body = body.replace(/"hyIncome":"[^",]*"/g, function (match) {
   var item = json[idx];
   idx++;
   if (item && item.birthday != null && item.hyIncome != null) {
-    return '"hyIncome":"' + item.hyIncome + " | " + item.birthday + '"';
+    // 注意用 "\\n"（字面 \n 两字符）：真实换行符在 JSON 字符串中非法
+    return '"hyIncome":"' + item.hyIncome + "\\n" + item.birthday + '"';
   }
   return match;
 });
