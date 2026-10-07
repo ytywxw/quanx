@@ -19,10 +19,15 @@ const StatusTexts = {
 
 const requestUrl = $request.url;
 const requestHeaders = Object.assign({}, $request.headers || {});
-delete requestHeaders["Host"];
-delete requestHeaders["host"];
-delete requestHeaders["Content-Length"];
-delete requestHeaders["content-length"];
+
+// 移除逐跳头字段（大小写不敏感），避免干扰 Worker 转发
+for (const key of Object.keys(requestHeaders)) {
+  const lower = key.toLowerCase();
+  if (lower === "host" || lower === "content-length") {
+    delete requestHeaders[key];
+  }
+}
+
 const requestMethod = $request.method || "GET";
 
 // 原始 URL → Worker 路由
@@ -38,6 +43,7 @@ const options = {
   headers: requestHeaders,
   timeout: 15000,
 };
+
 // QX 二进制请求体必须用 bodyBytes (ArrayBuffer)
 if (typeof $request.bodyBytes !== "undefined" && $request.bodyBytes instanceof ArrayBuffer) {
   options.bodyBytes = $request.bodyBytes;
