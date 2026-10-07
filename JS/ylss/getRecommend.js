@@ -5,7 +5,7 @@
 **************************************
 
 [rewrite_local]
-^https://www\.yaolaoss\.cn/Appapi/ApiMain/getRecommend\.html url script-response-body https://raw.githubusercontent.com/ytywxw/quanx/main/JS/ylss/getRecommend.js
+^https://www\.yaolaoss\.cn/Appapi/ApiHome/getRecommend\.html url script-response-body https://raw.githubusercontent.com/ytywxw/quanx/main/JS/ylss/getRecommend.js
 
 [mitm]
 hostname = *.yaolaoss.cn
@@ -15,20 +15,17 @@ hostname = *.yaolaoss.cn
 var body = $response.body;
 var json = JSON.parse(body);
 
-// 字符串级替换（与原版一致），仅修复一处隐患：
-// hyIncome 含 . + ( ) 等正则特殊字符时，动态构造的 RegExp 会解析错误
-function escapeRegExp(str) {
-  return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-for (var i = 0; i < json.length; i++) {
-  var item = json[i];
-  if (item.birthday == null || item.hyIncome == null) {
-    continue;
+// 与 getUserInfo 同款写法：正则字面量 + 函数式 replace。
+// 匹配模式固定（任意 hyIncome 值），按响应顺序与 json 数组一一对应，
+// 用函数返回每个条目的替换结果，无需动态构造 RegExp。
+var idx = 0;
+body = body.replace(/"hyIncome":"[^",]*"/g, function (match) {
+  var item = json[idx];
+  idx++;
+  if (item && item.birthday != null && item.hyIncome != null) {
+    return '"hyIncome":"' + item.hyIncome + " | " + item.birthday + '"';
   }
-  var birthStr = item.birthday;
-  var re = new RegExp('"hyIncome":"' + escapeRegExp(item.hyIncome) + '"', "g");
-  body = body.replace(re, '"hyIncome":"' + item.hyIncome + " | " + birthStr + '"');
-}
+  return match;
+});
 
 $done(body);
